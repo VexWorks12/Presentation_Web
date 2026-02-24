@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wika ng Pilipino — Lesson Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sun: #FFD700;
+  --sun2: #FFA500;
+  --red: #CE1126;
+  --blue: #0038A8;
+  --white: #FFF8F0;
+  --dark: #0a0a0f;
+  --surface: #12121a;
+  --border: #1e1e2e;
+  --text: #F5F0E8;
+  --muted: #7a7a8a;
+  --green: #2ECC71;
+}
+
+html, body { width:100%; height:100%; overflow:hidden; background:var(--dark); color:var(--text); font-family:'Plus Jakarta Sans',sans-serif; cursor:none; }
+
+/* Cursor */
+#cur { position:fixed; width:10px; height:10px; border-radius:50%; background:var(--sun); pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:difference; transition:width 0.15s,height 0.15s; }
+#cur-ring { position:fixed; width:32px; height:32px; border-radius:50%; border:1.5px solid rgba(255,215,0,0.5); pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all 0.12s ease; }
+
+/* BG Canvas */
+#bgCanvas { position:fixed; inset:0; z-index:0; }
+
+/* Baybayin bg text */
+#baybayin-bg {
+  position:fixed; inset:0; z-index:0;
+  display:flex; flex-wrap:wrap; align-items:flex-start;
+  font-size:48px; line-height:1.2; color:rgba(255,215,0,0.03);
+  pointer-events:none; overflow:hidden; padding:20px;
+  font-family:'Playfair Display',serif;
+  letter-spacing:8px;
+}
+
+/* Scanlines */
+.scan { position:fixed; inset:0; z-index:1; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px); pointer-events:none; }
+
+/* Progress */
+#prog { position:fixed; top:0; left:0; height:3px; z-index:200; transition:width 0.5s ease; background:linear-gradient(90deg,var(--red),var(--sun),var(--blue)); box-shadow:0 0 12px var(--sun); }
+
+/* Section label */
+#sec-label { position:fixed; top:18px; left:24px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--sun); opacity:0.7; z-index:200; }
+
+/* Slide counter */
+#counter { position:fixed; top:18px; right:24px; font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); z-index:200; }
+
+/* Nav */
+#nav { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px; background:rgba(18,18,26,0.92); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:99px; padding:8px 20px; z-index:200; }
+.nbtn { background:none; border:none; color:var(--text); font-size:16px; cursor:none; padding:6px 12px; border-radius:8px; transition:all 0.2s; font-family:'DM Mono',monospace; }
+.nbtn:hover { background:var(--border); color:var(--sun); }
+.nbtn:disabled { color:var(--muted); }
+#slide-num { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); min-width:48px; text-align:center; }
+
+/* Dots */
+#dots { position:fixed; right:20px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:7px; z-index:200; }
+.dot { width:5px; height:5px; border-radius:50%; background:var(--muted); cursor:none; transition:all 0.3s; }
+.dot.active { background:var(--sun); box-shadow:0 0 8px var(--sun); height:18px; border-radius:3px; }
+
+/* ── DECK ── */
+#deck { position:fixed; inset:0; z-index:2; }
+
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:52px 76px; opacity:0; pointer-events:none; overflow:hidden; }
+.slide.active { opacity:1; pointer-events:all; }
+.slide.entering .ai { animation:fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+.slide.entering .ai:nth-child(1){animation-delay:0.04s}
+.slide.entering .ai:nth-child(2){animation-delay:0.10s}
+.slide.entering .ai:nth-child(3){animation-delay:0.16s}
+.slide.entering .ai:nth-child(4){animation-delay:0.22s}
+.slide.entering .ai:nth-child(5){animation-delay:0.28s}
+.slide.entering .ai:nth-child(6){animation-delay:0.34s}
+.slide.entering .ai:nth-child(7){animation-delay:0.40s}
+.slide.entering .ai:nth-child(8){animation-delay:0.46s}
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Shared heading ── */
+.sh { display:flex; flex-direction:column; align-items:flex-start; width:100%; max-width:860px; margin-bottom:22px; }
+.sh .tag { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--sun); margin-bottom:8px; }
+.sh h2 { font-family:'Playfair Display',serif; font-size:clamp(28px,3.5vw,48px); font-weight:900; line-height:1; }
+
+/* ══════════ SLIDE 1 — TITLE ══════════ */
+.title-slide { text-align:center; }
+.baybayin-title {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(14px,2vw,22px);
+  color:var(--sun); letter-spacing:12px; opacity:0.6; margin-bottom:12px;
+}
+.main-title {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(52px,9vw,120px);
+  font-weight:900; line-height:0.9;
+  background:linear-gradient(135deg,var(--white) 0%,var(--sun) 50%,var(--sun2) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  position:relative; letter-spacing:2px;
+}
+.main-sub { font-family:'Playfair Display',serif; font-size:clamp(18px,2.5vw,28px); color:rgba(255,248,240,0.5); margin-top:12px; font-weight:700; letter-spacing:4px; }
+.flag-stripe { display:flex; gap:0; margin:28px auto; width:200px; height:6px; border-radius:3px; overflow:hidden; }
+.fs-r { flex:1; background:var(--red); }
+.fs-w { flex:1; background:var(--white); }
+.fs-b { flex:1; background:var(--blue); }
+.title-meta { display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-top:16px; }
+.tmeta { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; color:var(--muted); border:1px solid var(--border); padding:6px 14px; border-radius:99px; }
+
+/* Sun decoration */
+.sun-deco {
+  position:absolute; width:300px; height:300px; border-radius:50%;
+  background:radial-gradient(circle,rgba(255,215,0,0.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* ══════════ SLIDE 2 — LAYUNIN ══════════ */
+.layunin-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; width:100%; max-width:860px; }
+.lay-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:22px 18px; cursor:none;
+  transition:all 0.3s; position:relative; overflow:hidden;
+}
+.lay-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.lay-card.a::before { background:var(--blue); }
+.lay-card.b::before { background:var(--red); }
+.lay-card.c::before { background:var(--sun); }
+.lay-card:hover { transform:translateY(-5px); box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+.lay-icon { font-size:28px; margin-bottom:12px; }
+.lay-type { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+.lay-card.a .lay-type { color:var(--blue); }
+.lay-card.b .lay-type { color:var(--red); }
+.lay-card.c .lay-type { color:var(--sun); }
+.lay-title { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:10px; }
+.lay-items { display:flex; flex-direction:column; gap:6px; }
+.lay-item { font-size:12px; color:#aaa; line-height:1.5; padding-left:12px; position:relative; }
+.lay-item::before { content:'◆'; position:absolute; left:0; font-size:6px; top:4px; }
+.lay-card.a .lay-item::before { color:var(--blue); }
+.lay-card.b .lay-item::before { color:var(--red); }
+.lay-card.c .lay-item::before { color:var(--sun); }
+
+/* ══════════ SLIDE 3 — PAKSA ══════════ */
+.paksa-center { display:flex; flex-direction:column; align-items:center; text-align:center; width:100%; max-width:760px; }
+.paksa-big { font-family:'Playfair Display',serif; font-size:clamp(40px,6vw,84px); font-weight:900; line-height:1; color:var(--sun); margin-bottom:24px; position:relative; }
+.paksa-big .under { display:block; font-size:0.45em; color:rgba(255,248,240,0.4); letter-spacing:4px; margin-top:6px; font-family:'Plus Jakarta Sans',serif; font-weight:400; }
+.paksa-desc { font-size:17px; color:#c0b89a; line-height:1.8; max-width:600px; margin-bottom:28px; }
+.paksa-tags { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.ptag { background:rgba(255,215,0,0.08); border:1px solid rgba(255,215,0,0.2); color:var(--sun); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:6px 14px; border-radius:99px; }
+
+/* Animated sun rays */
+.sun-rays { position:absolute; width:180px; height:180px; opacity:0.06; animation:spinSun 30s linear infinite; pointer-events:none; }
+@keyframes spinSun { to { transform:rotate(360deg); } }
+
+/* ══════════ SLIDE 4 — PAKIKINIG ══════════ */
+.pakikinig-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; max-width:860px; }
+.pk-left { display:flex; flex-direction:column; gap:14px; }
+.pk-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:18px 20px; cursor:none;
+  transition:all 0.3s; display:flex; align-items:flex-start; gap:14px;
+}
+.pk-card:hover { border-color:rgba(255,215,0,0.3); transform:translateX(4px); }
+.pk-num { font-family:'Playfair Display',serif; font-size:36px; font-weight:900; line-height:1; color:var(--sun); opacity:0.2; flex-shrink:0; }
+.pk-text h4 { font-size:14px; font-weight:700; margin-bottom:5px; }
+.pk-text p { font-size:12px; color:#999; line-height:1.6; }
+.pk-right {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:24px; display:flex; flex-direction:column; justify-content:center;
+}
+.pk-quote { font-family:'Playfair Display',serif; font-size:clamp(18px,2vw,26px); font-weight:700; line-height:1.4; color:var(--sun); margin-bottom:16px; }
+.pk-quote-mark { font-size:60px; line-height:0.5; color:var(--sun); opacity:0.2; font-family:'Playfair Display',serif; }
+.pk-author { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:2px; }
+
+/* ══════════ SLIDE 5 — TALASALITAAN ══════════ */
+.vocab-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:860px; }
+.vocab-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:0; cursor:none; overflow:hidden;
+  transition:all 0.3s; position:relative;
+}
+.vocab-card:hover { border-color:rgba(255,215,0,0.4); }
+.vocab-card:hover .vocab-back { opacity:1; }
+.vocab-card:hover .vocab-front { opacity:0; }
+.vocab-front, .vocab-back { padding:20px 22px; transition:opacity 0.3s; }
+.vocab-back { position:absolute; inset:0; padding:20px 22px; opacity:0; background:rgba(255,215,0,0.05); }
+.vocab-word { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:var(--sun); margin-bottom:4px; }
+.vocab-type { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:2px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; }
+.vocab-def { font-size:13px; color:#aaa; line-height:1.6; }
+.vocab-ex { font-size:12px; color:var(--sun); font-style:italic; margin-top:8px; padding:8px 12px; background:rgba(255,215,0,0.06); border-radius:6px; border-left:2px solid var(--sun); }
+.vocab-hint { position:absolute; bottom:10px; right:14px; font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); }
+
+/* ══════════ SLIDE 6 — GRAMATIKA ══════════ */
+.gram-layout { display:flex; flex-direction:column; gap:14px; width:100%; max-width:860px; }
+.gram-row { display:grid; grid-template-columns:200px 1fr; gap:16px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 22px; cursor:none; transition:all 0.3s; }
+.gram-row:hover { border-color:rgba(255,215,0,0.25); }
+.gram-label { font-family:'Playfair Display',serif; font-size:20px; font-weight:900; color:var(--sun); }
+.gram-desc { font-size:14px; color:#bbb; line-height:1.6; }
+.gram-example { font-family:'DM Mono',monospace; font-size:12px; color:var(--blue); background:rgba(0,56,168,0.1); padding:4px 10px; border-radius:5px; margin-top:4px; display:inline-block; border:1px solid rgba(0,56,168,0.2); }
+.gram-highlight { color:var(--sun); font-weight:700; }
+
+/* ══════════ SLIDE 7 — PAGBABASA ══════════ */
+.kwento-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; padding:32px 36px; width:100%; max-width:820px;
+  position:relative; overflow:hidden;
+}
+.kwento-card::before { content:'"'; position:absolute; top:-10px; left:20px; font-family:'Playfair Display',serif; font-size:180px; color:rgba(255,215,0,0.04); line-height:1; }
+.kwento-title { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:var(--sun); margin-bottom:6px; }
+.kwento-author { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; margin-bottom:20px; }
+.kwento-text { font-size:15px; line-height:2; color:#d0c8b8; }
+.kwento-text .word-hl { color:var(--sun); font-weight:700; cursor:none; border-bottom:1px dashed rgba(255,215,0,0.4); transition:all 0.2s; }
+.kwento-text .word-hl:hover { background:rgba(255,215,0,0.1); border-radius:3px; padding:0 2px; }
+.kwento-tip { margin-top:16px; padding:12px 16px; background:rgba(0,56,168,0.08); border:1px solid rgba(0,56,168,0.2); border-radius:10px; font-size:12px; color:#99a; font-family:'DM Mono',monospace; }
+
+/* ══════════ SLIDE 8 — GAWAIN (QUIZ) ══════════ */
+.gawain-wrap { width:100%; max-width:720px; }
+.gawain-progress { display:flex; gap:6px; margin-bottom:24px; }
+.gp-dot { flex:1; height:3px; border-radius:99px; background:var(--border); transition:background 0.4s; }
+.gp-dot.done { background:var(--sun); }
+.gawain-q { font-family:'Playfair Display',serif; font-size:clamp(18px,2.5vw,26px); font-weight:700; line-height:1.4; margin-bottom:24px; color:var(--white); }
+.gawain-opts { display:flex; flex-direction:column; gap:11px; }
+.gopt {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:15px 20px; cursor:none;
+  font-size:15px; transition:all 0.25s; display:flex; align-items:center; gap:14px;
+}
+.gopt:hover:not(.locked) { border-color:rgba(255,215,0,0.4); background:rgba(255,215,0,0.04); transform:translateX(5px); }
+.gopt.correct { border-color:var(--green); background:rgba(46,204,113,0.07); color:var(--green); }
+.gopt.wrong { border-color:var(--red); background:rgba(206,17,38,0.07); color:var(--red); }
+.gopt-l { font-family:'DM Mono',monospace; font-size:11px; font-weight:700; width:26px; height:26px; border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.gawain-fb { margin-top:18px; padding:14px 18px; border-radius:10px; font-size:14px; display:none; line-height:1.6; }
+.gawain-fb.show { display:block; }
+.gawain-fb.ok { background:rgba(46,204,113,0.07); color:var(--green); border:1px solid rgba(46,204,113,0.2); }
+.gawain-fb.no { background:rgba(206,17,38,0.07); color:#ff8899; border:1px solid rgba(206,17,38,0.2); }
+.gnext { margin-top:16px; display:none; background:none; border:1px solid var(--sun); color:var(--sun); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; padding:10px 24px; border-radius:99px; cursor:none; transition:all 0.25s; }
+.gnext:hover { background:var(--sun); color:var(--dark); }
+.score-card { text-align:center; padding:32px; }
+.score-num { font-family:'Playfair Display',serif; font-size:80px; font-weight:900; color:var(--sun); line-height:1; }
+.score-label { font-size:16px; color:var(--muted); margin-top:8px; }
+.score-msg { font-size:20px; font-weight:700; margin-top:16px; }
+
+/* ══════════ SLIDE 9 — TAKDANG-ARALIN ══════════ */
+.aralin-cards { display:flex; flex-direction:column; gap:12px; width:100%; max-width:820px; }
+.aralin-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:18px 22px; cursor:none;
+  display:flex; align-items:flex-start; gap:18px;
+  transition:all 0.3s;
+}
+.aralin-card:hover { border-color:rgba(255,215,0,0.3); transform:translateX(6px); }
+.aralin-num { font-family:'Playfair Display',serif; font-size:42px; font-weight:900; line-height:1; color:var(--sun); opacity:0.15; flex-shrink:0; width:48px; }
+.aralin-body h4 { font-size:16px; font-weight:700; margin-bottom:6px; }
+.aralin-body p { font-size:13px; color:#999; line-height:1.6; }
+.aralin-tag { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:2px; padding:2px 8px; border-radius:99px; margin-bottom:8px; display:inline-block; }
+.aralin-tag.blue { background:rgba(0,56,168,0.15); color:var(--blue); border:1px solid rgba(0,56,168,0.2); }
+.aralin-tag.red { background:rgba(206,17,38,0.12); color:var(--red); border:1px solid rgba(206,17,38,0.2); }
+.aralin-tag.sun { background:rgba(255,215,0,0.1); color:var(--sun); border:1px solid rgba(255,215,0,0.2); }
+
+/* ══════════ SLIDE 10 — PAGTATAYA ══════════ */
+.rubric-table { width:100%; max-width:840px; border-collapse:separate; border-spacing:0 8px; }
+.rubric-table th { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:10px 16px; text-align:left; }
+.rubric-table td { padding:14px 16px; font-size:13px; background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); transition:all 0.2s; }
+.rubric-table td:first-child { border-left:1px solid var(--border); border-radius:10px 0 0 10px; }
+.rubric-table td:last-child { border-right:1px solid var(--border); border-radius:0 10px 10px 0; }
+.rubric-table tr:hover td { background:rgba(255,215,0,0.03); border-color:rgba(255,215,0,0.15); }
+.rubric-crit { font-weight:700; color:var(--text); }
+.rubric-pts { font-family:'DM Mono',monospace; font-size:14px; font-weight:700; color:var(--sun); }
+.rubric-total { background:rgba(255,215,0,0.06) !important; border-color:rgba(255,215,0,0.2) !important; }
+
+/* ══════════ SLIDE 11 — PAGTATAPOS ══════════ */
+.end-slide { text-align:center; position:relative; }
+.end-main { font-family:'Playfair Display',serif; font-size:clamp(48px,8vw,100px); font-weight:900; line-height:0.9; }
+.end-main .e1 { display:block; -webkit-text-stroke:2px var(--sun); color:transparent; }
+.end-main .e2 { display:block; color:var(--white); }
+.end-main .e3 { display:block; font-size:0.4em; color:var(--sun); letter-spacing:6px; margin-top:12px; }
+.end-quote { font-family:'Playfair Display',serif; font-size:17px; color:rgba(255,248,240,0.4); margin-top:28px; max-width:500px; line-height:1.6; font-style:italic; }
+.end-attr { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); margin-top:10px; letter-spacing:2px; }
+.restart-btn { margin-top:32px; background:none; border:1px solid var(--sun); color:var(--sun); font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; padding:12px 28px; border-radius:99px; cursor:none; transition:all 0.3s; }
+.restart-btn:hover { background:var(--sun); color:var(--dark); box-shadow:0 0 30px rgba(255,215,0,0.3); }
+
+/* Word tooltip */
+#word-tip { position:fixed; background:rgba(18,18,26,0.97); border:1px solid var(--sun); border-radius:10px; padding:10px 14px; font-size:13px; z-index:300; display:none; max-width:220px; pointer-events:none; box-shadow:0 0 20px rgba(255,215,0,0.15); }
+#word-tip strong { color:var(--sun); font-family:'DM Mono',monospace; font-size:11px; display:block; margin-bottom:4px; letter-spacing:1px; }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<div class="scan"></div>
+<div id="baybayin-bg"></div>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div id="prog"></div>
+<div id="sec-label">Panimula</div>
+<div id="counter">01 / 11</div>
+<div id="dots"></div>
+<div id="word-tip"></div>
+
+<div id="deck">
+
+<!-- ══ SLIDE 1: PAMAGAT ══ -->
+<div class="slide title-slide active" data-sec="Pamagat">
+  <div class="sun-deco" style="top:-50px;right:-50px"></div>
+  <svg class="sun-rays" viewBox="0 0 200 200" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)">
+    <defs><radialGradient id="sg"><stop offset="0%" stop-color="#FFD700" stop-opacity="0.3"/><stop offset="100%" stop-color="#FFD700" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="100" cy="100" r="90" fill="url(#sg)"/>
+    <g stroke="#FFD700" stroke-width="1.5" opacity="0.15">
+      <line x1="100" y1="5" x2="100" y2="35"/><line x1="100" y1="165" x2="100" y2="195"/>
+      <line x1="5" y1="100" x2="35" y2="100"/><line x1="165" y1="100" x2="195" y2="100"/>
+      <line x1="29" y1="29" x2="50" y2="50"/><line x1="150" y1="150" x2="171" y2="171"/>
+      <line x1="171" y1="29" x2="150" y2="50"/><line x1="50" y1="150" x2="29" y2="171"/>
+    </g>
+  </svg>
+  <div class="baybayin-title ai">ᜏᜒᜃ ᜅ ᜉᜒᜎᜒᜉᜒᜈᜓ</div>
+  <div class="main-title ai">WIKA</div>
+  <div class="main-sub ai">ng Pilipino</div>
+  <div class="flag-stripe ai"><div class="fs-b"></div><div class="fs-r"></div><div class="fs-w"></div></div>
+  <div class="title-meta ai">
+    <span class="tmeta">Araling Panlipunan</span>
+    <span class="tmeta">Filipino</span>
+    <span class="tmeta">Baitang 7–10</span>
+    <span class="tmeta">1 Oras</span>
+  </div>
+  <p style="position:absolute;bottom:80px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px" class="ai">PINDUTIN ANG → PARA MAGSIMULA</p>
+</div>
+
+<!-- ══ SLIDE 2: LAYUNIN ══ -->
+<div class="slide" data-sec="Layunin">
+  <div class="sh ai"><span class="tag">Layunin ng Aralin</span><h2>Ano ang Ating Matututuhan?</h2></div>
+  <div class="layunin-grid">
+    <div class="lay-card a ai">
+      <div class="lay-icon">🧠</div>
+      <div class="lay-type">Kaalaman</div>
+      <div class="lay-title">Cognitive</div>
+      <div class="lay-items">
+        <div class="lay-item">Maipaliwanag ang kahulugan ng wika</div>
+        <div class="lay-item">Matukoy ang mga katangian ng wikang Filipino</div>
+        <div class="lay-item">Maunawaan ang papel ng wika sa lipunan</div>
+      </div>
+    </div>
+    <div class="lay-card b ai">
+      <div class="lay-icon">✍️</div>
+      <div class="lay-type">Kasanayan</div>
+      <div class="lay-title">Psychomotor</div>
+      <div class="lay-items">
+        <div class="lay-item">Magbigay ng wastong gamit ng Filipino sa pangungusap</div>
+        <div class="lay-item">Makilala ang mga salitang hiniram mula sa ibang wika</div>
+        <div class="lay-item">Makabuo ng sariling pangungusap</div>
+      </div>
+    </div>
+    <div class="lay-card c ai">
+      <div class="lay-icon">💛</div>
+      <div class="lay-type">Pagpapahalaga</div>
+      <div class="lay-title">Affective</div>
+      <div class="lay-items">
+        <div class="lay-item">Mapahalagahan ang wikang Filipino bilang wikang pambansa</div>
+        <div class="lay-item">Ipakita ang pagmamahal sa sariling wika</div>
+        <div class="lay-item">Igalang ang pagkakaiba ng mga diyalekto</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 3: PAKSA ══ -->
+<div class="slide" data-sec="Paksa">
+  <svg class="sun-rays" style="position:absolute;right:100px;top:50%;transform:translateY(-50%);opacity:0.04;width:400px;height:400px" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="80" fill="none" stroke="#FFD700" stroke-width="1"/>
+    <circle cx="100" cy="100" r="60" fill="none" stroke="#FFD700" stroke-width="0.5"/>
+    <circle cx="100" cy="100" r="40" fill="none" stroke="#FFD700" stroke-width="0.5"/>
+    <g stroke="#FFD700" stroke-width="0.5">
+      <line x1="100" y1="20" x2="100" y2="180"/><line x1="20" y1="100" x2="180" y2="100"/>
+      <line x1="43" y1="43" x2="157" y2="157"/><line x1="157" y1="43" x2="43" y2="157"/>
+    </g>
+  </svg>
+  <div class="paksa-center">
+    <div class="paksa-big ai">Wika ng<br>Pilipino<span class="under">Ang Ating Pambansang Wika</span></div>
+    <p class="paksa-desc ai">Ang <strong style="color:var(--sun)">wikang Filipino</strong> ay ang pambansang wika ng Pilipinas. Ito ay nagmula sa <strong style="color:var(--sun)">Tagalog</strong> at binuo ng mga salita mula sa iba't ibang wikang Pilipino at dayuhan. Ito ay simbolo ng ating pagkakakilanlan bilang isang bansa.</p>
+    <div class="paksa-tags ai">
+      <span class="ptag">Kasaysayan</span>
+      <span class="ptag">Gramatika</span>
+      <span class="ptag">Talasalitaan</span>
+      <span class="ptag">Kultura</span>
+      <span class="ptag">Pagkakakilanlan</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 4: PAKIKINIG (PANIMULANG GAWAIN) ══ -->
+<div class="slide" data-sec="Panimulang Gawain">
+  <div class="sh ai"><span class="tag">Panimulang Gawain — Pakikinig</span><h2>Ang Kahalagahan ng Wika</h2></div>
+  <div class="pakikinig-layout">
+    <div class="pk-left">
+      <div class="pk-card ai">
+        <div class="pk-num">1</div>
+        <div class="pk-text"><h4>Pakikinig ng Talumpati</h4><p>Makinig ng bahagi ng talumpati ni Jose Rizal tungkol sa wikang Pilipino. Pansinin ang mga salitang ginamit.</p></div>
+      </div>
+      <div class="pk-card ai">
+        <div class="pk-num">2</div>
+        <div class="pk-text"><h4>Tanong sa Klase</h4><p>Ilang wika ang inyong alam? Ano ang pinagkaiba ng Filipino sa Tagalog?</p></div>
+      </div>
+      <div class="pk-card ai">
+        <div class="pk-num">3</div>
+        <div class="pk-text"><h4>Brainstorming</h4><p>Ibahagi ang mga salitang Filipino na ginagamit sa pang-araw-araw na buhay sa inyong lugar.</p></div>
+      </div>
+      <div class="pk-card ai">
+        <div class="pk-num">4</div>
+        <div class="pk-text"><h4>Think-Pair-Share</h4><p>Bakit mahalaga ang pagpapanatili ng wikang pambansa sa modernong panahon?</p></div>
+      </div>
+    </div>
+    <div class="pk-right ai">
+      <div class="pk-quote-mark">"</div>
+      <div class="pk-quote">Ang hindi marunong magmahal sa sariling wika ay higit pa sa amoy ng sa sampaguita.</div>
+      <div style="height:16px"></div>
+      <div class="pk-author">— Jose Rizal (hango)</div>
+      <div style="height:20px;border-top:1px solid var(--border);margin-top:20px;padding-top:16px">
+        <p style="font-size:12px;color:#888;line-height:1.7">Ang wikang Filipino ay may mahigit <strong style="color:var(--sun)">170+ wika at diyalekto</strong> sa buong Pilipinas. Ang bawat isa ay mayaman at natatangi.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 5: TALASALITAAN ══ -->
+<div class="slide" data-sec="Talasalitaan">
+  <div class="sh ai"><span class="tag">Talasalitaan — i-hover para makita ang kahulugan</span><h2>Mga Pangunahing Salita</h2></div>
+  <div class="vocab-grid">
+    <div class="vocab-card ai">
+      <div class="vocab-front">
+        <div class="vocab-word">Wika</div>
+        <div class="vocab-type">Pangngalan · Noun</div>
+        <div class="vocab-def">Isang sistemang ginagamit ng mga tao para makipag-usap at maghatid ng kahulugan.</div>
+        <div class="vocab-hint">i-hover →</div>
+      </div>
+      <div class="vocab-back">
+        <div class="vocab-word" style="font-size:18px">Wika</div>
+        <div class="vocab-type">Halimbawa</div>
+        <div class="vocab-ex">"Ang wikang Filipino ang nagbubuklod sa atin bilang isang bansa."</div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Pinagmulan: Tagalog</div>
+      </div>
+    </div>
+    <div class="vocab-card ai">
+      <div class="vocab-front">
+        <div class="vocab-word">Salita</div>
+        <div class="vocab-type">Pangngalan · Noun</div>
+        <div class="vocab-def">Isang yunit ng wika na may kahulugan. Binubuo ito ng mga titik at tunog.</div>
+        <div class="vocab-hint">i-hover →</div>
+      </div>
+      <div class="vocab-back">
+        <div class="vocab-word" style="font-size:18px">Salita</div>
+        <div class="vocab-type">Halimbawa</div>
+        <div class="vocab-ex">"Maraming salitang Filipino ang hiniram mula sa Espanyol at Ingles."</div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Kaugnay: Pananalita, Talasalitaan</div>
+      </div>
+    </div>
+    <div class="vocab-card ai">
+      <div class="vocab-front">
+        <div class="vocab-word">Gramatika</div>
+        <div class="vocab-type">Pangngalan · Noun</div>
+        <div class="vocab-def">Ang mga panuntunan at estruktura ng isang wika. Gabay sa tamang pagsasalita at pagsusulat.</div>
+        <div class="vocab-hint">i-hover →</div>
+      </div>
+      <div class="vocab-back">
+        <div class="vocab-word" style="font-size:18px">Gramatika</div>
+        <div class="vocab-type">Halimbawa</div>
+        <div class="vocab-ex">"Kailangan nating pag-aralan ang gramatika para makasulat nang tama."</div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Hiniram sa: Español — Gramática</div>
+      </div>
+    </div>
+    <div class="vocab-card ai">
+      <div class="vocab-front">
+        <div class="vocab-word">Diyalekto</div>
+        <div class="vocab-type">Pangngalan · Noun</div>
+        <div class="vocab-def">Iba't ibang anyo ng isang wika na ginagamit ng isang partikular na grupo o rehiyon.</div>
+        <div class="vocab-hint">i-hover →</div>
+      </div>
+      <div class="vocab-back">
+        <div class="vocab-word" style="font-size:18px">Diyalekto</div>
+        <div class="vocab-type">Halimbawa</div>
+        <div class="vocab-ex">"Ang Bisaya, Ilocano, at Kapampangan ay mga diyalekto ng Pilipinas."</div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Hiniram sa: Español — Dialecto</div>
+      </div>
+    </div>
+    <div class="vocab-card ai">
+      <div class="vocab-front">
+        <div class="vocab-word">Bokabularyo</div>
+        <div class="vocab-type">Pangngalan · Noun</div>
+        <div class="vocab-def">Ang kabuuan ng mga salitang alam at ginagamit ng isang tao o wika.</div>
+        <div class="vocab-hint">i-hover →</div>
+      </div>
+      <div class="vocab-back">
+        <div class="vocab-word" style="font-size:18px">Bokabularyo</div>
+        <div class="vocab-type">Halimbawa</div>
+        <div class="vocab-ex">"Palawakin ang iyong bokabularyo sa pamamagitan ng pagbabasa."</div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Hiniram sa: Español — Vocabulario</div>
+      </div>
+    </div>
+    <div class="vocab-card ai">
+      <div class="vocab-front">
+        <div class="vocab-word">Panitikan</div>
+        <div class="vocab-type">Pangngalan · Noun</div>
+        <div class="vocab-def">Ang mga akdang pampanitikan tulad ng tula, kwento, at dula na nakasulat sa isang wika.</div>
+        <div class="vocab-hint">i-hover →</div>
+      </div>
+      <div class="vocab-back">
+        <div class="vocab-word" style="font-size:18px">Panitikan</div>
+        <div class="vocab-type">Halimbawa</div>
+        <div class="vocab-ex">"Ang panitikang Filipino ay mayaman sa kwentong-bayan at epiko."</div>
+        <div style="font-size:11px;color:#888;margin-top:8px">Kaugnay: Literatura, Akda</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 6: GRAMATIKA ══ -->
+<div class="slide" data-sec="Gramatika">
+  <div class="sh ai"><span class="tag">Aralin sa Gramatika</span><h2>Bahagi ng Pananalita</h2></div>
+  <div class="gram-layout">
+    <div class="gram-row ai">
+      <div class="gram-label" style="color:var(--sun)">Pangngalan</div>
+      <div><div class="gram-desc">Salitang tumutukoy sa <span class="gram-highlight">tao, lugar, bagay, o ideya</span>. Ito ang paksang tinatawag.</div><span class="gram-example">Halimbawa: kabataan, wika, Pilipinas, pag-asa</span></div>
+    </div>
+    <div class="gram-row ai">
+      <div class="gram-label" style="color:var(--blue)">Pandiwa</div>
+      <div><div class="gram-desc">Salitang nagpapahayag ng <span class="gram-highlight">kilos, galaw, o kalagayan</span>. Nasa gitna ng bawat pangungusap.</div><span class="gram-example">Halimbawa: kumain, nagsulat, magsasalita, sumayaw</span></div>
+    </div>
+    <div class="gram-row ai">
+      <div class="gram-label" style="color:var(--red)">Pang-uri</div>
+      <div><div class="gram-desc">Salitang naglalarawan ng <span class="gram-highlight">katangian ng pangngalan</span>. Nagbibigay ng kulay sa pahayag.</div><span class="gram-example">Halimbawa: maganda, matalino, matapang, masayahin</span></div>
+    </div>
+    <div class="gram-row ai">
+      <div class="gram-label" style="color:var(--green)">Pang-abay</div>
+      <div><div class="gram-desc">Salitang nagpapaliwanag sa <span class="gram-highlight">pandiwa, pang-uri, o kapwa pang-abay</span>. Nagsasaad ng paraan, lugar, o oras.</div><span class="gram-example">Halimbawa: mabilis, dito, kahapon, palagi, talagang</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 7: PAGBABASA ══ -->
+<div class="slide" data-sec="Pagbabasa">
+  <div class="sh ai"><span class="tag">Pagbabasa — i-hover ang gintong salita</span><h2>Maikling Talata</h2></div>
+  <div class="kwento-card ai">
+    <div class="kwento-title">Ang Wika: Ating Kayamanan</div>
+    <div class="kwento-author">MAIKLING TALATA · ARALING FILIPINO</div>
+    <div class="kwento-text">
+      Ang <span class="word-hl" data-def="Wika: isang sistema ng komunikasyon na ginagamit ng isang grupo">wika</span> ay hindi lamang isang paraan ng pakikipag-usap. Ito ay isang <span class="word-hl" data-def="Kayamanan: bagay na may malaking halaga o kahulugan">kayamanan</span> na nagpapakita ng ating <span class="word-hl" data-def="Kultura: mga kaugalian, sining, at paniniwala ng isang lipunan">kultura</span> at <span class="word-hl" data-def="Pagkakakilanlan: ang katangiang nagpapakilala sa isang tao o bansa">pagkakakilanlan</span> bilang isang bansa. Ang wikang Filipino ay nagmula sa <span class="word-hl" data-def="Tagalog: ang wikang pinagbasehan ng wikang pambansang Filipino">Tagalog</span> at patuloy na lumalago sa pamamagitan ng mga bagong salitang hiniram mula sa <span class="word-hl" data-def="Espanyol: wika ng Espanya; nag-iwan ng maraming salita sa Filipino">Espanyol</span>, <span class="word-hl" data-def="Ingles: internasyonal na wika; ginagamit din sa Pilipinas">Ingles</span>, at iba pang <span class="word-hl" data-def="Diyalekto: iba't ibang anyo ng wika sa iba't ibang rehiyon">diyalekto</span>. Bilang mga <span class="word-hl" data-def="Kabataan: mga batang mamamayan ng bansa; kinabukasan ng Pilipinas">kabataan</span>, ating paunlarin at pangalagaan ang wikang pambansa.
+    </div>
+    <div class="kwento-tip">Tip: I-hover ang mga gintong salita para makita ang kahulugan</div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 8: GAWAIN / QUIZ ══ -->
+<div class="slide" data-sec="Gawain">
+  <div class="sh ai"><span class="tag">Gawain — Subukin ang Kaalaman</span><h2>Pagsusulit sa Filipino</h2></div>
+  <div class="gawain-wrap ai">
+    <div class="gawain-progress" id="gProg">
+      <div class="gp-dot done"></div><div class="gp-dot"></div><div class="gp-dot"></div><div class="gp-dot"></div>
+    </div>
+    <div id="gawainContent"></div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 9: TAKDANG-ARALIN ══ -->
+<div class="slide" data-sec="Takdang-Aralin">
+  <div class="sh ai"><span class="tag">Takdang-Aralin</span><h2>Mga Gawaing Bahay</h2></div>
+  <div class="aralin-cards">
+    <div class="aralin-card ai">
+      <div class="aralin-num">1</div>
+      <div class="aralin-body">
+        <span class="aralin-tag blue">Indibidwal</span>
+        <h4>Sanaysay: Ang Aking Wika</h4>
+        <p>Sumulat ng isang maikling sanaysay (150–200 salita) tungkol sa kahalagahan ng wikang Filipino sa iyong pang-araw-araw na buhay. Gamitin ang mga salitang natutunan ngayon.</p>
+      </div>
+    </div>
+    <div class="aralin-card ai">
+      <div class="aralin-num">2</div>
+      <div class="aralin-body">
+        <span class="aralin-tag red">Pangkat</span>
+        <h4>Poster: Ipaglaban ang Filipino</h4>
+        <p>Gumawa ng malikhain at makulay na poster na nagtataguyod ng paggamit ng wikang Filipino sa paaralan at komunidad. Gamitin ang mga tamang gramatika sa lahat ng teksto.</p>
+      </div>
+    </div>
+    <div class="aralin-card ai">
+      <div class="aralin-num">3</div>
+      <div class="aralin-body">
+        <span class="aralin-tag sun">Pananaliksik</span>
+        <h4>Hanapin ang 10 Hiram na Salita</h4>
+        <p>Hanapin ang sampung salitang Filipino na hiniram mula sa ibang wika (Espanyol, Ingles, Tsino, atbp.). Isulat ang orihinal na wika at ang kahulugan ng bawat isa.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 10: PAGTATAYA ══ -->
+<div class="slide" data-sec="Pagtataya">
+  <div class="sh ai"><span class="tag">Pagtataya — Rubric</span><h2>Pamantayan sa Pagmamarka</h2></div>
+  <table class="rubric-table ai">
+    <thead>
+      <tr>
+        <th>Pamantayan</th>
+        <th>Natatangi (4)</th>
+        <th>Mahusay (3)</th>
+        <th>Katamtaman (2)</th>
+        <th>Puntos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><div class="rubric-crit">Nilalaman</div><div style="font-size:11px;color:#777">Kaugnayan ng ideya</div></td>
+        <td style="font-size:12px;color:#bbb">Lahat ng ideya ay tumpak at may kaugnayan</td>
+        <td style="font-size:12px;color:#bbb">Karamihan ay tumpak at may kaugnayan</td>
+        <td style="font-size:12px;color:#bbb">Ilang ideya lamang ang may kaugnayan</td>
+        <td><div class="rubric-pts">/ 4</div></td>
+      </tr>
+      <tr>
+        <td><div class="rubric-crit">Gramatika</div><div style="font-size:11px;color:#777">Tamang gamit ng wika</div></td>
+        <td style="font-size:12px;color:#bbb">Walang grammatical errors</td>
+        <td style="font-size:12px;color:#bbb">1–2 errors lamang</td>
+        <td style="font-size:12px;color:#bbb">3–5 errors</td>
+        <td><div class="rubric-pts">/ 4</div></td>
+      </tr>
+      <tr>
+        <td><div class="rubric-crit">Bokabularyo</div><div style="font-size:11px;color:#777">Gamit ng mga salita</div></td>
+        <td style="font-size:12px;color:#bbb">Mayaman at angkop na bokabularyo</td>
+        <td style="font-size:12px;color:#bbb">Angkop na bokabularyo</td>
+        <td style="font-size:12px;color:#bbb">Limitadong bokabularyo</td>
+        <td><div class="rubric-pts">/ 4</div></td>
+      </tr>
+      <tr>
+        <td><div class="rubric-crit">Organisasyon</div><div style="font-size:11px;color:#777">Pagkakasunod-sunod</div></td>
+        <td style="font-size:12px;color:#bbb">Malinaw at lohikal na organisasyon</td>
+        <td style="font-size:12px;color:#bbb">Halos malinaw ang organisasyon</td>
+        <td style="font-size:12px;color:#bbb">Medyo magulo ang daloy</td>
+        <td><div class="rubric-pts">/ 4</div></td>
+      </tr>
+      <tr class="rubric-total">
+        <td colspan="4" style="font-weight:700;font-size:14px;text-align:right;color:var(--sun)">Kabuuang Puntos</td>
+        <td><div class="rubric-pts" style="font-size:18px">/ 16</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ SLIDE 11: PAGTATAPOS ══ -->
+<div class="slide end-slide" data-sec="">
+  <svg class="sun-rays" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;opacity:0.05" viewBox="0 0 200 200">
+    <circle cx="100" cy="100" r="90" fill="none" stroke="#FFD700" stroke-width="1"/>
+    <g stroke="#FFD700" stroke-width="0.5">
+      <line x1="100" y1="10" x2="100" y2="190"/><line x1="10" y1="100" x2="190" y2="100"/>
+      <line x1="36" y1="36" x2="164" y2="164"/><line x1="164" y1="36" x2="36" y2="164"/>
+      <line x1="19" y1="68" x2="181" y2="132"/><line x1="68" y1="19" x2="132" y2="181"/>
+      <line x1="19" y1="132" x2="181" y2="68"/><line x1="132" y1="19" x2="68" y2="181"/>
+    </g>
+  </svg>
+  <div class="end-main ai">
+    <span class="e1">MARAMING</span>
+    <span class="e2">SALAMAT!</span>
+    <span class="e3">Mabuhay ang Wikang Filipino</span>
+  </div>
+  <div class="end-quote ai">"Ang wika ng isang bayan ang nagpapakita ng kanyang kalinangan at dangal."</div>
+  <div class="end-attr ai">— Lope K. Santos, Ama ng Wikang Pambansa</div>
+  <button class="restart-btn ai" onclick="goTo(0)">Ulitin ang Aralin</button>
+</div>
+
+</div><!-- end deck -->
+
+<div id="nav">
+  <button class="nbtn" id="prevBtn" onclick="changeSlide(-1)" disabled>←</button>
+  <span id="slide-num">01 / 11</span>
+  <button class="nbtn" id="nextBtn" onclick="changeSlide(1)">→</button>
+</div>
+
+<script>
+// ── Cursor ──
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+setInterval(()=>{rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';},16);
+document.querySelectorAll('button,[onclick],.vocab-card,.lay-card,.pk-card,.gram-row,.aralin-card,.gopt,.dot,.nbtn').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='18px';cur.style.height='18px';ring.style.width='44px';ring.style.height='44px';ring.style.borderColor='rgba(255,215,0,0.6)';});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='32px';ring.style.height='32px';ring.style.borderColor='rgba(255,215,0,0.4)';});
+});
+
+// ── Background canvas ──
+const canvas=document.getElementById('bgCanvas'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+// Stars + batik-like pattern
+const stars=Array.from({length:80},()=>({x:Math.random()*3000,y:Math.random()*2000,r:Math.random()*1.2,a:Math.random(),vx:(Math.random()-0.5)*0.1,vy:(Math.random()-0.5)*0.1}));
+function drawBg(){
+  ctx.clearRect(0,0,W,H);
+  // Gradient sky
+  const g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#06060e');g.addColorStop(1,'#0a0814');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='rgba(255,215,0,0.015)';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // Stars
+  stars.forEach(s=>{
+    s.x+=s.vx;s.y+=s.vy;
+    if(s.x<0)s.x=W;if(s.x>W)s.x=0;if(s.y<0)s.y=H;if(s.y>H)s.y=0;
+    ctx.beginPath();ctx.arc(s.x%W,s.y%H,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,215,0,${s.a*0.6})`;ctx.fill();
+  });
+  // Sun glow corner
+  const sg=ctx.createRadialGradient(W,0,0,W,0,400);
+  sg.addColorStop(0,'rgba(255,165,0,0.04)');sg.addColorStop(1,'transparent');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,H);
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ── Baybayin BG text ──
+const bb=document.getElementById('baybayin-bg');
+const chars='ᜀᜁᜂᜃᜄᜅᜆᜇᜈᜉᜊᜋᜌᜍᜎᜏᜐᜑᜒᜓ᜔';
+for(let i=0;i<200;i++) bb.innerHTML+=chars[Math.floor(Math.random()*chars.length)]+' ';
+
+// ── Slides ──
+const slides=document.querySelectorAll('.slide');
+const sections=['Pamagat','Layunin','Paksa','Panimulang Gawain','Talasalitaan','Gramatika','Pagbabasa','Gawain','Takdang-Aralin','Pagtataya',''];
+let current=0;
+// Build dots
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.onclick=()=>goTo(i);dotsEl.appendChild(d);});
+
+function goTo(n){
+  if(n<0||n>=slides.length)return;
+  slides[current].classList.remove('active','entering');
+  current=n;
+  slides[current].classList.add('active');
+  requestAnimationFrame(()=>slides[current].classList.add('entering'));
+  document.getElementById('prog').style.width=((current+1)/slides.length*100)+'%';
+  document.getElementById('slide-num').textContent=String(current+1).padStart(2,'0')+' / '+slides.length;
+  document.getElementById('prevBtn').disabled=current===0;
+  document.getElementById('nextBtn').disabled=current===slides.length-1;
+  document.getElementById('sec-label').textContent=sections[current]||'';
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===current));
+}
+function changeSlide(d){goTo(current+d);}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')changeSlide(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')changeSlide(-1);
+});
+goTo(0);
+
+// ── Word tooltips ──
+const wordTip=document.getElementById('word-tip');
+document.querySelectorAll('.word-hl').forEach(w=>{
+  w.addEventListener('mouseenter',e=>{
+    wordTip.innerHTML=`<strong>KAHULUGAN</strong>${w.dataset.def}`;
+    wordTip.style.display='block';
+  });
+  w.addEventListener('mousemove',e=>{
+    wordTip.style.left=(e.clientX+16)+'px';
+    wordTip.style.top=(e.clientY-10)+'px';
+  });
+  w.addEventListener('mouseleave',()=>wordTip.style.display='none');
+});
+
+// ── Quiz (Gawain) ──
+const quizzes=[
+  {q:'Alin sa sumusunod ang tamang kahulugan ng "wika"?',opts:['Isang uri ng prutas na Pilipino','Isang sistemang ginagamit para makipag-usap at maghatid ng kahulugan','Isang likhain o sining na biswal','Ang pangalan ng ating pambansang bayani'],correct:1,fb:'Tama! Ang wika ay isang sistema ng komunikasyon na ginagamit ng mga tao para makipag-ugnayan.'},
+  {q:'Ano ang pinagbasehan ng wikang Filipino?',opts:['Bisaya','Ilocano','Tagalog','Kapampangan'],correct:2,fb:'Mahusay! Ang wikang Filipino ay nagmula at nakabatay sa wikang Tagalog, na pinaunlad pa ng iba pang wikang Pilipino.'},
+  {q:'Ang "kumain" ay halimbawa ng anong bahagi ng pananalita?',opts:['Pangngalan','Pang-uri','Pandiwa','Pang-abay'],correct:2,fb:'Tama! Ang "kumain" ay isang pandiwa dahil nagpapahayag ito ng kilos o gawain.'},
+  {q:'Sino ang tinatawag na "Ama ng Wikang Pambansa"?',opts:['Jose Rizal','Andres Bonifacio','Lope K. Santos','Manuel L. Quezon'],correct:2,fb:'Tama! Si Lope K. Santos ang tinatawag na Ama ng Wikang Pambansa dahil sa kanyang malaking kontribusyon sa pagpapaunlad ng Filipino.'},
+];
+let qIdx=0, score=0, answered=false;
+
+function renderQuiz(){
+  if(qIdx>=quizzes.length){
+    document.getElementById('gawainContent').innerHTML=`
+      <div class="score-card">
+        <div class="score-num">${score}/${quizzes.length}</div>
+        <div class="score-label">Tamang Sagot</div>
+        <div class="score-msg" style="color:${score===quizzes.length?'var(--sun)':score>=2?'var(--green)':'var(--red)'}">
+          ${score===quizzes.length?'Napakahusay! Naintindihan mo ang aralin!':score>=2?'Magaling! Kaya mo pa!':'Mag-aral pa nang mabuti, kaya mo ito!'}
+        </div>
+        <button onclick="resetQuiz()" style="margin-top:24px;background:none;border:1px solid var(--sun);color:var(--sun);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;padding:10px 24px;border-radius:99px;cursor:none;transition:all 0.2s" onmouseenter="this.style.background='var(--sun)';this.style.color='var(--dark)'" onmouseleave="this.style.background='none';this.style.color='var(--sun)'">Ulitin ang Quiz</button>
+      </div>`;
+    return;
+  }
+  const q=quizzes[qIdx];
+  const letters=['A','B','C','D'];
+  document.getElementById('gawainContent').innerHTML=`
+    <div class="gawain-q">${q.q}</div>
+    <div class="gawain-opts">${q.opts.map((o,i)=>`
+      <div class="gopt" onclick="answerQ(this,${i===q.correct})" id="opt${i}">
+        <span class="gopt-l">${letters[i]}</span>${o}
+      </div>`).join('')}
+    </div>
+    <div class="gawain-fb" id="gFb"></div>
+    <button class="gnext" id="gnext" onclick="nextQ()">Susunod na Tanong →</button>
+  `;
+  // Update progress dots
+  document.querySelectorAll('.gp-dot').forEach((d,i)=>{d.classList.toggle('done',i<=qIdx);});
+  answered=false;
+}
+
+function answerQ(el,correct){
+  if(answered)return; answered=true;
+  document.querySelectorAll('.gopt').forEach(o=>o.classList.add('locked'));
+  el.classList.add(correct?'correct':'wrong');
+  if(!correct) document.getElementById('opt'+quizzes[qIdx].correct).classList.add('correct');
+  if(correct) score++;
+  const fb=document.getElementById('gFb');
+  fb.className='gawain-fb show '+(correct?'ok':'no');
+  fb.textContent=(correct?'Tama! ':'Mali. ')+quizzes[qIdx].fb;
+  document.getElementById('gnext').style.display='inline-block';
+}
+function nextQ(){qIdx++;renderQuiz();}
+function resetQuiz(){qIdx=0;score=0;renderQuiz();document.querySelectorAll('.gp-dot').forEach((d,i)=>{d.classList.toggle('done',i===0);});}
+renderQuiz();
+
+// Swipe
+let ts=0;
+document.addEventListener('touchstart',e=>ts=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{const d=ts-e.changedTouches[0].clientX;if(Math.abs(d)>50)changeSlide(d>0?1:-1);});
+</script>
+</body>
+</html>
